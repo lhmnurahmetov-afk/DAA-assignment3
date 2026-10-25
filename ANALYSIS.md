@@ -210,5 +210,6 @@ Both methods returned the same cost and number of components at every size, and 
 
 ## 10. Sources and AI assistance
 
-**AI assistance.** I dont use
-Other sources: the lecture materials of the course "Design and Analysis of Algorithms" 
+**AI assistance.** I dont use 
+
+**Other sources.** the lecture materials of the course "Design and Analysis of Algorithms"
