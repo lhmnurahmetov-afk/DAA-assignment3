@@ -5,18 +5,33 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
- 
+
+/**
+ * Implement the six methods and add your route-reconstruction helper.
+ * Input extraction is provided; all algorithm state belongs to the current request.
+ * See ../../README.md for contracts and Java guidance.
+ *
+ * All DFS traversals are iterative (explicit stack), so deep graphs
+ * (for example a chain of 100000 vertices) cannot overflow the call stack.
+ * No state is kept in static fields, so every request starts clean.
+ */
 public final class Algorithms {
     private static final long WEIGHT_OFFSET = 1_000_000_000L;
-    private static final int ID_BITS = 20; 
+    private static final int ID_BITS = 20; // edge ids fit in 20 bits (m <= 250000)
     private static final long ID_MASK = (1L << ID_BITS) - 1;
- 
+
     private Algorithms() {
     }
- 
+
+    // ------------------------------------------------------------------
+    // Shared helpers
+    // ------------------------------------------------------------------
+
+    /** Disjoint-set union with path compression and union by size. */
+    private static final class Dsu {
         final int[] parent;
         final int[] size;
- 
+
         Dsu(int n) {
             parent = new int[n];
             size = new int[n];
@@ -25,8 +40,8 @@ public final class Algorithms {
                 size[i] = 1;
             }
         }
- 
-        
+
+        /** Iterative find: first locate the root, then compress the path. */
         int find(int x) {
             int root = x;
             while (parent[root] != root) {
@@ -39,8 +54,8 @@ public final class Algorithms {
             }
             return root;
         }
- 
-       
+
+        /** Returns the size of the merged set, or -1 if already together. */
         int union(int a, int b) {
             int ra = find(a);
             int rb = find(b);
@@ -57,13 +72,17 @@ public final class Algorithms {
             return size[ra];
         }
     }
- 
 
+    /**
+     * Compressed adjacency lists (CSR). For vertex v, its neighbours are
+     * to[start[v] .. start[v + 1] - 1] and the matching original edge ids are
+     * id[...]. With reverse = true the edge direction is flipped (transpose).
+     */
     private static final class Graph {
         final int[] start;
         final int[] to;
         final int[] id;
- 
+
         Graph(int n, int[][] edges, boolean reverse) {
             start = new int[n + 1];
             for (int[] e : edges) {
@@ -85,15 +104,19 @@ public final class Algorithms {
             }
         }
     }
- 
-   
+
+    /**
+     * Three-state iterative DFS (0 = white, 1 = gray, 2 = black).
+     * Returns a topological order, or null if a directed cycle exists
+     * (a gray vertex reached again, including self-loops).
+     */
     private static int[] topologicalOrder(int n, Graph g) {
         int[] state = new int[n];
         int[] next = new int[n];
         int[] stack = new int[n];
         int[] finish = new int[n];
         int finished = 0;
- 
+
         for (int s = 0; s < n; s++) {
             if (state[s] != 0) {
                 continue;
@@ -107,7 +130,7 @@ public final class Algorithms {
                 if (next[u] < g.start[u + 1]) {
                     int v = g.to[next[u]++];
                     if (state[v] == 1) {
-                        return null; 
+                        return null; // back edge: directed cycle
                     }
                     if (state[v] == 0) {
                         state[v] = 1;
@@ -121,14 +144,14 @@ public final class Algorithms {
                 }
             }
         }
- 
+
         int[] order = new int[n];
         for (int i = 0; i < n; i++) {
-            order[i] = finish[n - 1 - i]; 
+            order[i] = finish[n - 1 - i]; // reverse finish order
         }
         return order;
     }
- 
+
     private static List<Integer> toList(int[] values) {
         List<Integer> list = new ArrayList<>(values.length);
         for (int value : values) {
@@ -136,16 +159,20 @@ public final class Algorithms {
         }
         return list;
     }
- 
-  
+
+    // ------------------------------------------------------------------
+    // dsu
+    // ------------------------------------------------------------------
+
+    /** DSU with path compression and union by size/rank; return states. */
     static Map<String, Object> dsu(Map<String, Object> input) {
         int n = Input.vertexCount(input);
         int[][] operations = Input.operations(input);
- 
+
         Dsu sets = new Dsu(n);
         int components = n;
         int largest = n > 0 ? 1 : 0;
- 
+
         List<int[]> states = new ArrayList<>(operations.length);
         for (int[] op : operations) {
             int merged = sets.union(op[0], op[1]);
@@ -155,50 +182,58 @@ public final class Algorithms {
             }
             states.add(new int[] {components, largest});
         }
- 
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("states", states);
         return result;
     }
- 
 
+    // ------------------------------------------------------------------
+    // kruskal
+    // ------------------------------------------------------------------
+
+    /** Separate Kruskal implementation; return cost, edge_ids, components. */
     static Map<String, Object> kruskal(Map<String, Object> input) {
         int n = Input.vertexCount(input);
         int[][] edges = Input.edges(input);
- 
-    
+
+        // Sort by (weight, original id) packed into one long.
         long[] keys = new long[edges.length];
         for (int i = 0; i < edges.length; i++) {
             keys[i] = ((edges[i][2] + WEIGHT_OFFSET) << ID_BITS) | i;
         }
         Arrays.sort(keys);
- 
+
         Dsu sets = new Dsu(n);
         long cost = 0;
         List<Integer> chosen = new ArrayList<>();
         for (long key : keys) {
             int index = (int) (key & ID_MASK);
             int[] e = edges[index];
-            if (sets.union(e[0], e[1]) != -1) { 
+            if (sets.union(e[0], e[1]) != -1) { // loops and cycles are rejected
                 cost += e[2];
                 chosen.add(index);
             }
         }
         Collections.sort(chosen);
- 
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("cost", cost);
         result.put("edge_ids", chosen);
         result.put("components", n - chosen.size());
         return result;
     }
- 
 
+    // ------------------------------------------------------------------
+    // prim
+    // ------------------------------------------------------------------
+
+    /** Separate Prim implementation; restart for every unvisited component. */
     static Map<String, Object> prim(Map<String, Object> input) {
         int n = Input.vertexCount(input);
         int[][] edges = Input.edges(input);
- 
-       
+
+        // Undirected adjacency: every edge appears at both endpoints.
         int[] start = new int[n + 1];
         for (int[] e : edges) {
             start[e[0] + 1]++;
@@ -213,21 +248,21 @@ public final class Algorithms {
             adjEdge[fill[edges[i][0]]++] = i;
             adjEdge[fill[edges[i][1]]++] = i;
         }
- 
+
         boolean[] visited = new boolean[n];
         long cost = 0;
         int components = 0;
         List<Integer> chosen = new ArrayList<>();
         PriorityQueue<Long> heap = new PriorityQueue<>();
- 
+
         for (int s = 0; s < n; s++) {
             if (visited[s]) {
                 continue;
             }
-            components++; 
+            components++; // new component: restart Prim from s
             visited[s] = true;
             pushEdges(s, start, adjEdge, edges, heap);
- 
+
             while (!heap.isEmpty()) {
                 int index = (int) (heap.poll() & ID_MASK);
                 int[] e = edges[index];
@@ -237,7 +272,7 @@ public final class Algorithms {
                 } else if (!visited[e[1]]) {
                     next = e[1];
                 } else {
-                    continue; 
+                    continue; // both endpoints already in the tree
                 }
                 visited[next] = true;
                 cost += e[2];
@@ -246,14 +281,14 @@ public final class Algorithms {
             }
         }
         Collections.sort(chosen);
- 
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("cost", cost);
         result.put("edge_ids", chosen);
         result.put("components", components);
         return result;
     }
- 
+
     private static void pushEdges(int v, int[] start, int[] adjEdge,
                                   int[][] edges, PriorityQueue<Long> heap) {
         for (int p = start[v]; p < start[v + 1]; p++) {
@@ -261,16 +296,20 @@ public final class Algorithms {
             heap.add(((edges[index][2] + WEIGHT_OFFSET) << ID_BITS) | index);
         }
     }
- 
-    
+
+    // ------------------------------------------------------------------
+    // scc
+    // ------------------------------------------------------------------
+
+    /** Kosaraju's two DFS passes; return component and exact condensation. */
     static Map<String, Object> scc(Map<String, Object> input) {
         int n = Input.vertexCount(input);
         int[][] edges = Input.edges(input);
- 
+
         Graph forward = new Graph(n, edges, false);
         Graph transpose = new Graph(n, edges, true);
- 
-        
+
+        // Pass 1: DFS on the original graph, record finishing order.
         boolean[] seen = new boolean[n];
         int[] next = new int[n];
         int[] stack = new int[n];
@@ -299,8 +338,8 @@ public final class Algorithms {
                 }
             }
         }
- 
-        
+
+        // Pass 2: DFS on the transpose in decreasing finishing time.
         int[] component = new int[n];
         Arrays.fill(component, -1);
         int count = 0;
@@ -324,8 +363,8 @@ public final class Algorithms {
             }
             count++;
         }
- 
-        
+
+        // Condensation: distinct cross-component pairs.
         long[] pairs = new long[edges.length];
         int used = 0;
         for (int[] e : edges) {
@@ -344,20 +383,24 @@ public final class Algorithms {
             }
             condensation.add(new int[] {(int) (pairs[i] / count), (int) (pairs[i] % count)});
         }
- 
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("component", component);
         result.put("condensation", condensation);
         return result;
     }
- 
-  
+
+    // ------------------------------------------------------------------
+    // topo
+    // ------------------------------------------------------------------
+
+    /** Three-state DFS and reverse finish order; return acyclic and order. */
     static Map<String, Object> topo(Map<String, Object> input) {
         int n = Input.vertexCount(input);
         int[][] edges = Input.edges(input);
- 
+
         int[] order = topologicalOrder(n, new Graph(n, edges, false));
- 
+
         Map<String, Object> result = new LinkedHashMap<>();
         if (order == null) {
             result.put("acyclic", false);
@@ -368,17 +411,21 @@ public final class Algorithms {
         }
         return result;
     }
- 
-    
+
+    // ------------------------------------------------------------------
+    // dag
+    // ------------------------------------------------------------------
+
+    /** Whole-graph cycle check and DAG relaxation; return acyclic, distance, parent_edge. */
     static Map<String, Object> dag(Map<String, Object> input) {
         int n = Input.vertexCount(input);
         int source = Input.source(input);
         int[][] edges = Input.edges(input);
- 
+
         Graph g = new Graph(n, edges, false);
-    
+        // The cycle check covers the whole graph, even parts unreachable from source.
         int[] order = topologicalOrder(n, g);
- 
+
         Map<String, Object> result = new LinkedHashMap<>();
         if (order == null) {
             result.put("acyclic", false);
@@ -386,14 +433,15 @@ public final class Algorithms {
             result.put("parent_edge", new ArrayList<Integer>());
             return result;
         }
- 
+
         long[] dist = new long[n];
         boolean[] reached = new boolean[n];
         int[] parentEdge = new int[n];
         Arrays.fill(parentEdge, -1);
         reached[source] = true;
         dist[source] = 0;
- 
+
+        // Relax edges in topological order; negative weights are fine in a DAG.
         for (int u : order) {
             if (!reached[u]) {
                 continue;
@@ -409,7 +457,7 @@ public final class Algorithms {
                 }
             }
         }
- 
+
         List<Long> distance = new ArrayList<>(n);
         for (int v = 0; v < n; v++) {
             distance.add(reached[v] ? dist[v] : null);
@@ -419,7 +467,13 @@ public final class Algorithms {
         result.put("parent_edge", toList(parentEdge));
         return result;
     }
- 
+
+    /**
+     * Route-reconstruction helper. Follows parent edges back from target to
+     * source and returns the vertices from source to target.
+     * Returns [source] when target == source and an empty list when the
+     * target is unreachable.
+     */
     static List<Integer> route(int source, int target, int[] parentEdge, int[][] edges) {
         List<Integer> path = new ArrayList<>();
         if (target == source) {
@@ -427,7 +481,7 @@ public final class Algorithms {
             return path;
         }
         if (parentEdge[target] == -1) {
-            return path;
+            return path; // unreachable
         }
         int v = target;
         path.add(v);
@@ -439,4 +493,3 @@ public final class Algorithms {
         return path;
     }
 }
- 
