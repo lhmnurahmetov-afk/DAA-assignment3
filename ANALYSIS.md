@@ -211,4 +211,4 @@ Both methods returned the same cost and number of components at every size, and 
 ## 10. Sources and AI assistance
 
 **AI assistance.** I dont use
-Other sources: the lecture materials of the course "Design and Analysis of Algorithms" (topics: disjoint-set union, minimum spanning trees with Kruskal and Prim, strongly connected components with Kosaraju, DFS topological sorting and shortest paths in a DAG), the assignment text and the supplied repository.
+Other sources: the lecture materials of the course "Design and Analysis of Algorithms" 
