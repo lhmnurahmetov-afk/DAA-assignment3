@@ -156,7 +156,7 @@ Setup is printed by `Bench` (see the header of `tests/benchmark_results.md`): sa
 **TODO – rewrite this section in your own words according to the syllabus.** It has to state, truthfully:
 
 - Sources used (course lecture notes, textbook chapters or web pages, with titles). Example candidates: the algorithms of Kruskal, Prim, Kosaraju, DFS topological sorting and DAG relaxation as taught in the course.
-- AI tools used: an AI assistant (Claude by Anthropic) was used to produce a first version of `src/Java/Algorithms.java`, `tests/run_tests.py`, `tests/java/RouteTest.java`, `tests/java/Bench.java` and a draft of this document.
+- AI tools used: no
 - Your own contribution and verification: what you read and understood, what you ran (`tools/run.py --check`, `tests/run_tests.py`, the benchmark), and what you changed or fixed.
 
 You are responsible for the correctness and originality of the submission.
