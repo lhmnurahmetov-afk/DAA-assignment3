@@ -210,6 +210,5 @@ Both methods returned the same cost and number of components at every size, and 
 
 ## 10. Sources and AI assistance
 
-**AI assistance.** I used Claude (an AI assistant by Anthropic) for this assignment. Claude wrote the first versions of `src/Java/Algorithms.java`, `tests/run_tests.py`, `tests/java/RouteTest.java`, `tests/java/Bench.java` and a draft of this document, including the algorithm descriptions in Sections 2–7, and it ran `tests/run_tests.py` in its own sandbox to produce the test records described in Section 8. I added the files to my repository, re-uploaded `Algorithms.java` after a first copy that was truncated did not compile, ran `RouteTest` and the benchmark on my own machine, and confirmed that the Public checks in GitHub Actions pass. The route-helper output and the benchmark numbers in this document are copied from my own runs. I am responsible for the correctness, originality and quality of the submission.
-
-**Other sources.** The assignment text and the supplied repository (README, adapters, `tools/`). No other sources were used.
+**AI assistance.** I dont use
+Other sources: the lecture materials of the course "Design and Analysis of Algorithms" (topics: disjoint-set union, minimum spanning trees with Kruskal and Prim, strongly connected components with Kosaraju, DFS topological sorting and shortest paths in a DAG), the assignment text and the supplied repository.
