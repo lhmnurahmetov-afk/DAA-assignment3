@@ -1,0 +1,19 @@
+Wall-clock time of one request in a running process, including JSON parse/print and the Python pipe.
+Seed 20261025. Run: python tests/run_tests.py
+
+large-dsu-random-q250000                   n=100000  m/q=250000     0.80s  PASS
+deep-dsu-chain                             n=100000  m/q=100004     0.39s  PASS
+deep-dsu-reverse-chain                     n=100000  m/q=99999      0.18s  PASS
+large-kruskal-random-m250000               n=100000  m/q=250000     0.96s  PASS
+large-prim-random-m250000                  n=100000  m/q=250000     1.92s  PASS
+deep-kruskal-path-n100000                  n=100000  m/q=99999      0.40s  PASS
+deep-prim-path-n100000                     n=100000  m/q=99999      0.20s  PASS
+large-scc-random-m250000                   n=100000  m/q=250000     0.75s  PASS
+deep-scc-single-cycle                      n=100000  m/q=100000     0.17s  PASS
+deep-scc-path-dag                          n=100000  m/q=99999      0.45s  PASS
+deep-topo-chain                            n=100000  m/q=99999      0.22s  PASS
+deep-topo-chain-with-back-edge             n=100000  m/q=100000     0.12s  PASS
+large-topo-random-dag-m250000              n=100000  m/q=250000     0.41s  PASS
+deep-dag-chain-negative-1e9                n=100000  m/q=99999      0.33s  PASS
+large-dag-random-m250000                   n=100000  m/q=250000     0.55s  PASS
+deep-dag-cycle-unreachable-from-source     n=100000  m/q=99999      0.12s  PASS
