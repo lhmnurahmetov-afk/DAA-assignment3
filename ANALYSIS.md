@@ -2,9 +2,6 @@
 
 Language: **Java 17** (`src/Java/Algorithms.java`; `Main`, `Json`, `Input` are the supplied adapters).
 
-> Sections marked **TODO** must be filled in with results of runs on your own machine before submission.
-> Delete this note when everything is filled in.
-
 ## 1. Build, run and test commands
 
 Run everything from the repository root.
@@ -123,9 +120,21 @@ java -cp build/app Main < tests/my_cases.jsonl
 
 `route(source, target, parentEdge, edges)` follows `parentEdge[target]` back to the source, using the tail of each selected edge as the previous vertex, then reverses. It returns the vertex sequence from source to target; `[source]` when `target == source`; and an **empty list** when the target is unreachable (`parentEdge[target] == -1` and `target != source`). This choice concerns the helper only; the JSON `distance` still uses `null`. Time and space O(L) for a route with L vertices.
 
-**Actual calls (output of `RouteTest`).**
+**Actual calls (output of `java -cp build/route RouteTest`, run on my machine).** Each line shows the route, the selected edge IDs (the edge entering each vertex), their total weight and the JSON `distance`. The test prints `OK` only if the first vertex is the source, the last is the target, every selected edge goes from the previous vertex to the next one (direction), and the sum of the weights equals `distance`.
 
-**TODO – paste the output of `java -cp build/route RouteTest` here.** It must show the four required cases: reachable target (spec graph, target 3), the source, an unreachable target (spec graph, target 4) and tied/parallel edges. For each, check direction (tail of each selected edge equals the previous vertex) and total weight (equal to `distance`); the test prints `OK` only if both hold.
+```
+spec reachable target        target=3 route=[0, 1, 2, 3] edge_ids=[0, 2, 3] weight=0 distance=0 OK
+spec route to source         target=0 route=[0] edge_ids=[] weight=0 distance=0 OK
+spec unreachable target      target=4 route=[] edge_ids=[] weight=- distance=null OK
+tied/parallel target 1       target=1 route=[0, 1] edge_ids=[0] weight=2 distance=2 OK
+tied/parallel target 2       target=2 route=[0, 2] edge_ids=[3] weight=3 distance=3 OK
+negative weights target 2    target=2 route=[0, 1, 2] edge_ids=[0, 1] weight=-2 distance=-2 OK
+source in the middle: 3      target=3 route=[2, 3] edge_ids=[1] weight=4 distance=4 OK
+source in the middle: 0      target=0 route=[] edge_ids=[] weight=- distance=null OK
+ALL ROUTE TESTS PASSED
+```
+
+Notes: the spec example gives route `[0, 1, 2, 3]` with weight `3 + (-7) + 4 = 0`; the source gives `[0]`; the unreachable vertex 4 gives the documented no-route result (empty list) while JSON `distance` is `null`. In the tied/parallel graph (edges 0 and 1 are parallel with weight 2; vertex 2 is reachable by `0->1->2` and by the direct edge 3, both of weight 3) the helper returns one valid route, here the direct edge 3, and the total weight matches the distance.
 
 ## 8. Testing
 
@@ -137,26 +146,70 @@ The checkers themselves are tested: each one accepts an alternative valid answer
 
 Coverage: empty and disconnected graphs, isolates, repeated and self unions, self-loops, parallel and tied edges, negative weights, totals beyond 32 bits in both directions, unreachable vertices, cycles outside the source's reachability, 710 random small cases compared with brute force/references, full-limit inputs (`n=100000`, `m` or `q = 250000`) for every task, deep chains and cycles of 100 000 vertices, and a mixed request sequence repeated three times in one process.
 
-**TODO – paste the summary that your run prints** (self-test lines, number of passed hand-written/random cases, mixed-sequence result, and `tests/large_report.txt`), and the output of `python tools/run.py --check`. Report only what you actually ran.
+**Results.** The Public checks (36 cases, repeated twice in one process) pass in GitHub Actions for the submitted commit. The output of my own suite, `python3 tests/run_tests.py`, is stored in the repository as `tests/TESTS.md` (every hand-written case with input, justification, expected result, actual output and verdict), `tests/my_cases.jsonl` with `tests/my_cases_actual.jsonl` (inputs and actual outputs, line by line) and `tests/large_report.txt` (one line per full-limit or deep case with the request time and verdict). All 27 checker self-tests (accept an alternative valid answer, reject an invalid witness) passed.
+
+**Provenance of these files.** The suite was executed by the AI assistant in its own sandbox (Linux, OpenJDK 21, Python 3.12), against the same `Algorithms.java` that is in this repository; it was not executed on my Mac. The timings in `tests/large_report.txt` therefore describe that environment, not the benchmark machine of Section 9. Running `python3 tests/run_tests.py` in the repository root regenerates all of these files. Console summary of that run:
+
+```
+== hand-written cases (52)
+   passed 52/52
+== random small cases vs brute force / references
+   passed 710/710
+== mixed requests repeated 3x in one process (state reset)
+   22 requests per round, 0 problems
+== full-limit and deep-chain cases (n=100000, m/q=250000)
+   large-dsu-random-q250000                   n=100000  m/q=250000     0.80s  PASS
+   deep-dsu-chain                             n=100000  m/q=100004     0.39s  PASS
+   deep-dsu-reverse-chain                     n=100000  m/q=99999      0.18s  PASS
+   large-kruskal-random-m250000               n=100000  m/q=250000     0.96s  PASS
+   large-prim-random-m250000                  n=100000  m/q=250000     1.92s  PASS
+   deep-kruskal-path-n100000                  n=100000  m/q=99999      0.40s  PASS
+   deep-prim-path-n100000                     n=100000  m/q=99999      0.20s  PASS
+   large-scc-random-m250000                   n=100000  m/q=250000     0.75s  PASS
+   deep-scc-single-cycle                      n=100000  m/q=100000     0.17s  PASS
+   deep-scc-path-dag                          n=100000  m/q=99999      0.45s  PASS
+   deep-topo-chain                            n=100000  m/q=99999      0.22s  PASS
+   deep-topo-chain-with-back-edge             n=100000  m/q=100000     0.12s  PASS
+   large-topo-random-dag-m250000              n=100000  m/q=250000     0.41s  PASS
+   deep-dag-chain-negative-1e9                n=100000  m/q=99999      0.33s  PASS
+   large-dag-random-m250000                   n=100000  m/q=250000     0.55s  PASS
+   deep-dag-cycle-unreachable-from-source     n=100000  m/q=99999      0.12s  PASS
+
+== SUMMARY: ALL PASSED
+```
 
 ## 9. Benchmark: Kruskal vs Prim
 
 Setup is printed by `Bench` (see the header of `tests/benchmark_results.md`): same generated graph for both methods, a fixed seed, `System.nanoTime()`, 3 untimed warm-up runs per method and size, 7 measured runs per method and size, alternating Kruskal and Prim. Before timing, both results are verified to have equal cost and component count and to be valid forests. Timing boundary (identical for both methods): one `Algorithms.<method>(request)` call on an already parsed request, i.e. `Input.edges` conversion + algorithm + building the result map; compilation, graph generation, JSON parsing and JSON output are excluded.
 
-**TODO – paste the table printed by `java -cp build/bench Bench 12345`** (three sizes: n=1 000/m=5 000, n=10 000/m=50 000, n=100 000/m=250 000; all runs and medians), and fill in: CPU model, RAM, operating system, Java version, the exact commands you used.
+**Environment and commands.** Apple MacBook Air, Apple M2 (8 logical processors), 16 GB RAM, macOS 26.2 (aarch64), OpenJDK 27 (64-Bit Server VM, max heap 4096 MB; the code itself is Java 17 compatible). Compilation and run:
+
+```
+javac -d build/bench src/Java/*.java tests/java/Bench.java
+java -Duser.language=en -Duser.country=US -cp build/bench Bench 12345
+```
+
+Full output, including the header with seed, timer and boundary: `tests/benchmark_results.md`. All times are in milliseconds (7 measured runs per method and size, in order; median in the last column).
+
+| n | m | method | cost (verified) | components | runs ms (in order) | median ms |
+|---|---|---|---|---|---|---|
+| 1000 | 5000 | Kruskal | -757096851848 | 1 | 1.26, 1.63, 1.04, 0.83, 0.69, 0.52, 0.46 | 0.83 |
+| 1000 | 5000 | Prim | -757096851848 | 1 | 3.03, 1.60, 1.64, 2.07, 1.35, 1.32, 2.16 | 1.64 |
+| 10000 | 50000 | Kruskal | -7573932896537 | 1 | 5.12, 5.11, 4.49, 4.06, 3.96, 4.39, 3.96 | 4.39 |
+| 10000 | 50000 | Prim | -7573932896537 | 1 | 22.09, 22.90, 22.75, 21.54, 21.34, 21.54, 20.63 | 21.54 |
+| 100000 | 250000 | Kruskal | -52905653145057 | 694 | 32.20, 31.74, 32.63, 31.93, 31.37, 31.15, 32.30 | 31.93 |
+| 100000 | 250000 | Prim | -52905653145057 | 694 | 130.55, 128.35, 134.13, 135.89, 130.18, 135.67, 129.35 | 130.55 |
+
+Both methods returned the same cost and number of components at every size, and the benchmark verified that each result is a valid forest before timing.
 
 **Asymptotic argument.** Both are O(n + m log m). Kruskal sorts m primitive keys once and then does about m near-constant DSU operations. Prim's lazy heap handles up to 2m entries, each a boxed `Long` with O(log m) push and pop.
 
-**TODO – observations.** After you have the numbers, write 3–5 sentences: which method was faster at each size, how the ratio changes with size, and whether that matches the argument above.
+**Observations.** Kruskal was faster than Prim at all three sizes: medians 0.83 ms vs 1.64 ms (n=1 000, m=5 000), 4.39 ms vs 21.54 ms (n=10 000, m=50 000) and 31.93 ms vs 130.55 ms (n=100 000, m=250 000), so Prim needed about 2.0, 4.9 and 4.1 times as long. From the middle to the largest size m grows 5 times; Kruskal's median grew 7.3 times and Prim's 6.1 times, a little faster than linear, which fits the O(m log m) bound (cache effects at larger n may also contribute). I draw no conclusion from the smallest size: there the runs of Kruskal fall from 1.26 ms to 0.46 ms, which suggests that the JIT compiler was still optimising the code, so the ratio 2.0 is probably not representative. At the largest size the runs are close to each other (Kruskal 31.15–32.63 ms, Prim 128.35–135.89 ms), so the medians are stable on this machine. One plausible reason for the gap is that Prim pushes up to 2m boxed `Long` keys through a `PriorityQueue`, whereas Kruskal sorts a primitive `long[]` once; I did not profile the code, so this is a hypothesis, not a measured result.
 
 **Limitations (design of this benchmark).** Random graphs with average degree 5 are not the only possible shape (dense or special graphs may change the ranking); the JVM's JIT compilation and garbage collection add noise, so only medians of few runs are reported; boxing in `PriorityQueue<Long>` favours Kruskal in constants; the three sizes are small in number, so no growth rate is fitted; results depend on hardware and background load.
 
 ## 10. Sources and AI assistance
 
-**TODO – rewrite this section in your own words according to the syllabus.** It has to state, truthfully:
+**AI assistance.** I used Claude (an AI assistant by Anthropic) for this assignment. Claude wrote the first versions of `src/Java/Algorithms.java`, `tests/run_tests.py`, `tests/java/RouteTest.java`, `tests/java/Bench.java` and a draft of this document, including the algorithm descriptions in Sections 2–7, and it ran `tests/run_tests.py` in its own sandbox to produce the test records described in Section 8. I added the files to my repository, re-uploaded `Algorithms.java` after a first copy that was truncated did not compile, ran `RouteTest` and the benchmark on my own machine, and confirmed that the Public checks in GitHub Actions pass. The route-helper output and the benchmark numbers in this document are copied from my own runs. I am responsible for the correctness, originality and quality of the submission.
 
-- Sources used (course lecture notes, textbook chapters or web pages, with titles). Example candidates: the algorithms of Kruskal, Prim, Kosaraju, DFS topological sorting and DAG relaxation as taught in the course.
-- AI tools used: no
-- Your own contribution and verification: what you read and understood, what you ran (`tools/run.py --check`, `tests/run_tests.py`, the benchmark), and what you changed or fixed.
-
-You are responsible for the correctness and originality of the submission.
+**Other sources.** The assignment text and the supplied repository (README, adapters, `tools/`). No other sources were used.
